@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ruta de Comercios</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <style>
+      <?!= include('styles'); ?>
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="eyebrow">CONSULTOR CERTIFICADO</p>
+        <h1>Ruta de comercios</h1>
+      </div>
+      <button id="locateButton" class="primary">⌖ Usar mi ubicación</button>
+    </header>
+    <main>
+      <aside class="sidebar">
+        <section class="location-card" id="locationStatus">
+          Comparte tu ubicación para ordenar los comercios cercanos.
+        </section>
+        <nav class="sidebar-tabs" aria-label="Secciones de la app">
+          <button class="sidebar-tab active" data-view="merchants">
+            Comercios</button
+          ><button class="sidebar-tab" data-view="route">
+            Plan de ruta <span id="routeTabCount">0</span></button
+          ><button class="sidebar-tab" data-view="visits">
+            Visitas <span id="visitTabCount">0</span>
+          </button>
+        </nav>
+        <section id="merchantsView">
+          <section class="filters">
+            <button id="addMerchantButton" class="add-merchant">
+              ＋ Agregar comercio
+            </button>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar comercio o persona"
+            />
+            <div class="filter-row">
+              <select id="visitFilter">
+                <option value="all">Todos</option>
+                <option value="pending">Pendientes</option>
+                <option value="visited">Visitados</option></select
+              ><select id="sortSelect">
+                <option value="distance">Más cercanos</option>
+                <option value="priority">Prioridad</option>
+                <option value="name">Nombre</option>
+              </select>
+            </div>
+          </section>
+          <section class="list-header">
+            <span id="resultCount">Cargando…</span><span>COMERCIOS</span>
+          </section>
+          <section
+            id="merchantList"
+            class="merchant-list"
+            aria-live="polite"
+          ></section>
+        </section>
+        <section id="routeView" hidden>
+          <section class="route-panel">
+            <div class="route-title">
+              <span>Ruta de hoy</span><strong id="routeCount">0</strong>
+            </div>
+            <p id="routeSummary">Selecciona comercios para crear una ruta.</p>
+            <div class="route-actions">
+              <button id="openRouteButton" class="primary" disabled>
+                Abrir ruta</button
+              ><button id="clearRouteButton" class="quiet" disabled>
+                Limpiar
+              </button>
+            </div>
+            <ol
+              id="routeList"
+              class="route-list"
+              aria-label="Paradas de la ruta"
+            ></ol>
+          </section>
+        </section>
+        <section id="visitsView" hidden>
+          <section class="visit-history-header">
+            <p class="eyebrow">HISTORIAL COMPARTIDO</p>
+            <h2>Visitas registradas</h2>
+            <p id="visitHistorySummary">Aún no hay visitas registradas.</p>
+          </section>
+          <section
+            id="visitHistoryList"
+            class="visit-history-list"
+            aria-live="polite"
+          ></section>
+        </section>
+      </aside>
+      <section class="map-wrap"><div id="map"></div></section>
+    </main>
+    <dialog id="visitDialog">
+      <form id="visitForm" method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">REGISTRO DE VISITA</p>
+            <h2 id="dialogMerchantName"></h2>
+          </div>
+          <button class="icon-button" value="cancel" formnovalidate aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <label
+          >Motivo de visita
+          <select id="visitType" required>
+            <option value="Encuesta">Encuesta</option>
+            <option value="Problema">Problema</option>
+            <option value="Rollos">Rollos</option>
+            <option value="Cambio de terminal">Cambio de terminal</option>
+            <option value="Activación de punto de venta">
+              Activación de punto de venta
+            </option>
+            <option value="Desactivación de punto de venta">
+              Desactivación de punto de venta
+            </option>
+          </select>
+        </label>
+        <label
+          >Notas<textarea
+            id="visitNotes"
+            rows="5"
+            placeholder="Describe lo realizado o los siguientes pasos..."
+          ></textarea>
+        </label>
+        <div class="dialog-actions">
+          <button class="quiet" value="cancel" formnovalidate>Cancelar</button
+          ><button id="saveVisitButton" class="primary" value="default">
+            Marcar como visitado
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="merchantDialog">
+      <form id="merchantForm" method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">NUEVO COMERCIO</p>
+            <h2>Agregar ubicación</h2>
+          </div>
+          <button class="icon-button" value="cancel" formnovalidate aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <label
+          >Nombre del comercio<input
+            id="newMerchantName"
+            required
+            placeholder="Ej. Abarrotes Luna"
+        /></label>
+        <div class="form-grid">
+          <label>Nombre<input id="newFirstName" placeholder="Contacto" /></label
+          ><label
+            >Apellido<input id="newLastName" placeholder="Apellido"
+          /></label>
+        </div>
+        <div class="form-grid">
+          <label>Teléfono<input id="newPhone" inputmode="tel" /></label
+          ><label>Correo<input id="newEmail" type="email" /></label>
+        </div>
+        <label
+          >Dirección<input
+            id="newAddress"
+            placeholder="Calle, número, colonia, ciudad"
+        /></label>
+        <div class="location-helper">
+          <span>Escribe dirección o coordenadas.</span
+          ><button id="geocodeButton" type="button" class="quiet">
+            Buscar coordenadas
+          </button>
+        </div>
+        <div class="form-grid">
+          <label
+            >Latitud<input
+              id="newLatitude"
+              type="number"
+              step="any"
+              inputmode="decimal" /></label
+          ><label
+            >Longitud<input
+              id="newLongitude"
+              type="number"
+              step="any"
+              inputmode="decimal"
+          /></label>
+        </div>
+        <p id="merchantFormStatus" class="form-status"></p>
+        <div class="dialog-actions">
+          <button class="quiet" value="cancel" formnovalidate>Cancelar</button
+          ><button class="primary" value="default">Guardar comercio</button>
+        </div>
+      </form>
+    </dialog>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      <?!= include('app'); ?>
+    </script>
+  </body>
+</html>
